@@ -1,11 +1,14 @@
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Mofast, Trade2w, Eglobal, Unateus, Halisi, Mainstream, Clinton, WarehouseKe, Adlat, BNE, Vital
 import datetime
+from django.db.models import Sum
+from .filters import Agent_filter
 
 
 def get_percentage_per_agent(request):
@@ -23,20 +26,115 @@ def get_percentage_per_agent(request):
     paginator = Paginator(mofast, 4)
     page_number = request.GET.get('page')
     page_obj = Paginator.get_page(paginator, page_number)
-    if Trade2w.objects.filter(owner=request.user).exists():
-        percentage = Trade2w.objects.get(owner=request.user).percentage
+    if Mofast.objects.filter(owner=request.user).exists():
+        percentage1 = Mofast.objects.get(owner=request.user).percentage
+        percentage = round(percentage1, 2)
     else:
         percentage = 0
+    if Trade2w.objects.filter(owner=request.user).exists():
+        percentage1 = Trade2w.objects.get(owner=request.user).percentage
+        percentage_trade = round(percentage1, 2)
+
+    else:
+        percentage_trade = 0
+    if Eglobal.objects.filter(owner=request.user).exists():
+        percentage1 = Eglobal.objects.get(owner=request.user).percentage
+        percentage_eglobal = round(percentage1, 2)
+
+    else:
+        percentage_eglobal = 0
+    if Unateus.objects.filter(owner=request.user).exists():
+        percentage1 = Unateus.objects.get(owner=request.user).percentage
+        percentage_unateus = round(percentage1, 2)
+
+    else:
+        percentage_unateus = 0
+
+    if Halisi.objects.filter(owner=request.user).exists():
+        percentage1 = Halisi.objects.get(owner=request.user).percentage
+        percentage_halisi = round(percentage1, 2)
+
+    else:
+        percentage_halisi = 0
+
+    if Mainstream.objects.filter(owner=request.user).exists():
+        percentage1 = Mainstream.objects.get(owner=request.user).percentage
+        percentage_mainstream = round(percentage1, 2)
+
+    else:
+        percentage_mainstream = 0
+
+    if Clinton.objects.filter(owner=request.user).exists():
+        percentage1 = Clinton.objects.get(owner=request.user).percentage
+        percentage_clinton = round(percentage1, 2)
+
+    else:
+        percentage_clinton = 0
+
+    if WarehouseKe.objects.filter(owner=request.user).exists():
+        percentage1 = WarehouseKe.objects.get(owner=request.user).percentage
+        percentage_warehouse = round(percentage1, 2)
+
+    else:
+        percentage_warehouse = 0
+
+    if Adlat.objects.filter(owner=request.user).exists():
+        percentage1 = Adlat.objects.get(owner=request.user).percentage
+        percentage_adlat = round(percentage1, 2)
+
+    else:
+        percentage_adlat = 0
+
+    if BNE.objects.filter(owner=request.user).exists():
+        percentage1 = BNE.objects.get(owner=request.user).percentage
+        percentage_bne = round(percentage1, 2)
+
+    else:
+        percentage_bne = 0
+    if Vital.objects.filter(owner=request.user).exists():
+        percentage1 = Vital.objects.get(owner=request.user).percentage
+        percentage_vital = round(percentage1, 2)
+
+    else:
+        percentage_vital = 0
+
     context = {
         'page_obj': page_obj,
         'mofast': mofast,
         'user': user,
         'trade': trade,
-        'percentage': percentage
+        'percentage': percentage,
+        'percentage_trade': percentage_trade,
+        'percentage_eglobal': percentage_eglobal,
+        'percentage_unateus': percentage_unateus,
+        'percentage_halisi': percentage_halisi,
+        'percentage_mainstream': percentage_mainstream,
+        'percentage_clinton': percentage_clinton,
+        'percentage_warehouse': percentage_warehouse,
+        'percentage_adlat': percentage_adlat,
+        'percentage_bne': percentage_bne,
+        'percentage_vital': percentage_vital,
+
 
 
     }
+
     return render(request, 'orders/view.html', context)
+
+def percentage_chart(request):
+    labels = []
+    data = []
+
+    queryset = Mofast.objects.values('owner').annotate(percentage=Sum('percentage')).order_by(
+        '-user_percentage')
+    for entry in queryset:
+        labels.append(entry['owner'])
+        data.append(entry['user_percentage'])
+
+    return JsonResponse(data={
+        'labels': labels,
+        'data': data,
+    })
 
 
 @login_required(login_url='/authentication/login')
@@ -92,7 +190,7 @@ def add_2wtrade(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/2wtrade.html', context)
-        Mofast.objects.create(owner=request.user, total=wtotal, date=date, scheduled=wscheduled,
+        Trade2w.objects.create(owner=request.user, total=wtotal, date=date, scheduled=wscheduled,
                               pending=wpending, cancelled=wcancelled, percentage=percentage)
 
         messages.success(request, "2W Trade details added successfully")
@@ -119,7 +217,7 @@ def add_eglobal(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_eglobal.html', context)
-        Mofast.objects.create(owner=request.user, total=eglobaltotal, date=date, scheduled=eglobalscheduled,
+        Eglobal.objects.create(owner=request.user, total=eglobaltotal, date=date, scheduled=eglobalscheduled,
                               pending=eglobalpending, cancelled=eglobalcancelled, percentage=percentage)
 
         messages.success(request, "Eglobal details added successfully")
@@ -146,7 +244,7 @@ def add_unateus(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_unateus.html', context)
-        Mofast.objects.create(owner=request.user, total=unateustotal, date=date, scheduled=unateusscheduled,
+        Unateus.objects.create(owner=request.user, total=unateustotal, date=date, scheduled=unateusscheduled,
                               pending=unateuspending, cancelled=unateuscancelled, percentage=percentage)
 
         messages.success(request, "Unateus details added successfully")
@@ -173,7 +271,7 @@ def add_halisi(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_unateus.html', context)
-        Mofast.objects.create(owner=request.user, total=halisitotal, date=date, scheduled=halisischeduled,
+        Halisi.objects.create(owner=request.user, total=halisitotal, date=date, scheduled=halisischeduled,
                               pending=halisipending, cancelled=halisicancelled, percentage=percentage)
 
         messages.success(request, "Halisi Labs details have been added successfully")
@@ -200,7 +298,7 @@ def add_mainstream(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_mainstream.html', context)
-        Mofast.objects.create(owner=request.user, total=mainstreamtotal, date=date, scheduled=mainstreamscheduled,
+        Mainstream.objects.create(owner=request.user, total=mainstreamtotal, date=date, scheduled=mainstreamscheduled,
                               pending=mainstreampending, cancelled=mainstreamcancelled, percentage=percentage)
 
         messages.success(request, "Mainstream details have been added successfully")
@@ -227,7 +325,7 @@ def add_clinton(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_mainstream.html', context)
-        Mofast.objects.create(owner=request.user, total=clintontotal, date=date, scheduled=clintonscheduled,
+        Clinton.objects.create(owner=request.user, total=clintontotal, date=date, scheduled=clintonscheduled,
                               pending=clintonpending, cancelled=clintoncancelled, percentage=percentage)
 
         messages.success(request, "Clinton Stores details have been added successfully")
@@ -254,7 +352,7 @@ def add_ke(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_kewarehouse.html', context)
-        Mofast.objects.create(owner=request.user, total=ketotal, date=date, scheduled=kescheduled,
+        WarehouseKe.objects.create(owner=request.user, total=ketotal, date=date, scheduled=kescheduled,
                               pending=kepending, cancelled=kecancelled, percentage=percentage)
 
         messages.success(request, "Ke-Warehouse details have been added successfully")
@@ -281,7 +379,7 @@ def add_adlat(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_adlat.html', context)
-        Mofast.objects.create(owner=request.user, total=adlattotal, date=date, scheduled=adlatscheduled,
+        Adlat.objects.create(owner=request.user, total=adlattotal, date=date, scheduled=adlatscheduled,
                               pending=adlatpending, cancelled=adlatcancelled, percentage=percentage)
 
         messages.success(request, "Adlat details have been added successfully")
@@ -308,7 +406,7 @@ def add_2b(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_adlate.html', context)
-        Mofast.objects.create(owner=request.user, total=btotal, date=date, scheduled=bscheduled,
+        BNE.objects.create(owner=request.user, total=btotal, date=date, scheduled=bscheduled,
                               pending=bpending, cancelled=bcancelled, percentage=percentage)
 
         messages.success(request, "2BNE details have been added successfully")
@@ -335,13 +433,11 @@ def add_vital(request):
         if not date:
             messages.error(request, 'Date is required')
             return render(request, 'orders/add_vital.html', context)
-        Mofast.objects.create(owner=request.user, total=vitaltotal, date=date, scheduled=vitalscheduled,
+        Vital.objects.create(owner=request.user, total=vitaltotal, date=date, scheduled=vitalscheduled,
                               pending=vitalpending, cancelled=vitalcancelled, percentage=percentage)
 
         messages.success(request, "Vital details have been added successfully")
         return redirect('add_vital')
-
-
 
 
 

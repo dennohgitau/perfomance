@@ -16,6 +16,7 @@ urlpatterns = [
     path('add_2b', views.add_2b, name="add_2b"),
     path('add_vital', views.add_vital, name="add_vital"),
     path('get_percentage_per_agent', views.get_percentage_per_agent, name="get_percentage_per_agent"),
+    path('percentage_chart/', views.percentage_chart, name='percentage_chart'),
 
 
 
